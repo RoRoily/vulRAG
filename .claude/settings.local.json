@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:tree-sitter.github.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:pypi.org)",
+      "WebFetch(domain:stackoverflow.com)",
+      "WebFetch(domain:til.simonwillison.net)",
+      "Bash(pip install *)",
+      "Bash(python -m pytest tests/ -v)",
+      "Bash(python -c ' *)",
+      "Bash(python -m mmrag.parsing tests/fixtures/sample.c --output text)",
+      "Bash(python -m mmrag.parsing tests/fixtures/sample.c --output text --slice 28:result --direction backward)",
+      "Bash(python -m mmrag.parsing tests/fixtures/sample.c --output json)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'Keys: {list\\(d.keys\\(\\)\\)}'\\); print\\(f'Functions: {len\\(d[\\\\\"functions\\\\\"]\\)}'\\); print\\(f'CFGs: {list\\(d[\\\\\"cfgs\\\\\"].keys\\(\\)\\)}'\\); print\\(f'Chunks: {len\\(d[\\\\\"chunks\\\\\"]\\)}'\\); print\\(f'Errors: {d[\\\\\"errors\\\\\"]}'\\)\")",
+      "Bash(python -m mmrag.parsing tests/fixtures/sample_broken.c --output text)",
+      "Bash(python -m mmrag.retrieval index tests/fixtures/sample.c --bm25-path C:\\\\Users\\\\BITho\\\\AppData\\\\Local\\\\Temp\\\\mmrag_test\\\\bm25.pkl)",
+      "Bash(python -m mmrag.retrieval query \"malloc free buffer overflow\" --mode bm25 --top-k 5 --bm25-path C:\\\\Users\\\\BITho\\\\AppData\\\\Local\\\\Temp\\\\mmrag_test\\\\bm25.pkl)",
+      "Bash(python -m mmrag.retrieval query \"pointer struct field assignment\" --mode bm25 --top-k 5 --bm25-path C:\\\\Users\\\\BITho\\\\AppData\\\\Local\\\\Temp\\\\mmrag_test\\\\bm25.pkl)",
+      "Bash(python -m mmrag.retrieval query \"strcpy sprintf dangerous\" --mode bm25 --top-k 3 --filter-kind function --bm25-path C:\\\\Users\\\\BITho\\\\AppData\\\\Local\\\\Temp\\\\mmrag_test\\\\bm25.pkl)",
+      "Bash(python -m mmrag.retrieval stats --bm25-path C:\\\\Users\\\\BITho\\\\AppData\\\\Local\\\\Temp\\\\mmrag_test\\\\bm25.pkl)",
+      "Bash(python -m mmrag.reasoning analyze --help)",
+      "Bash(python -m pytest tests/test_benchmark.py tests/test_finetune.py -v)",
+      "Bash(python -m pytest tests/test_finetune.py::TestTripletGeneration::test_generate_triplets -v)",
+      "Bash(python -m pytest tests/ -v --tb=short)",
+      "Bash(python -m mmrag.benchmark evaluate --dataset tests/fixtures/benchmark_sample.jsonl --mode retrieval --output text)",
+      "Bash(python -m mmrag.finetune generate-triplets --dataset tests/fixtures/benchmark_sample.jsonl --output /tmp/triplets_test.jsonl)",
+      "Bash(python -m mmrag.finetune --help)",
+      "Bash(python -m mmrag.benchmark --help)"
+    ]
+  }
+}

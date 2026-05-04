@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: mmrag
+Version: 0.1.0
+Summary: Multi-Modal Enhanced RAG for C/C++ vulnerability detection
+Requires-Python: >=3.10
+Requires-Dist: tree-sitter<0.26,>=0.22
+Requires-Dist: tree-sitter-c>=0.21
+Requires-Dist: tree-sitter-cpp>=0.22
+Requires-Dist: pydantic<3.0,>=2.0
+Requires-Dist: rank-bm25<0.3,>=0.2.2
+Requires-Dist: numpy>=1.22
+Requires-Dist: sentence-transformers<4.0,>=2.2.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Provides-Extra: gpu
+Requires-Dist: llama-cpp-python>=0.2.0; extra == "gpu"
+Provides-Extra: finetune
+Requires-Dist: torch>=2.0; extra == "finetune"

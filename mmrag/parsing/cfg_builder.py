@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from collections import deque
+
 from .models import (
-    ASTNode, BasicBlock, CFG, CFGEdge, CFGEdgeKind, FunctionInfo, SourceRange,
+    ASTNode, BasicBlock, CFG, CFGEdge, CFGEdgeKind, CFGFeatures, FunctionInfo, SourceRange,
 )
 
 _CONTROL_FLOW_TYPES = frozenset({
@@ -474,3 +476,46 @@ class _CFGBuilder:
 def build_cfg(function: FunctionInfo) -> CFG:
     builder = _CFGBuilder(function.name)
     return builder.build(function)
+
+
+def extract_cfg_features(cfg: CFG) -> CFGFeatures:
+    """Extract structural graph features from a CFG for multimodal retrieval."""
+    num_blocks = len(cfg.blocks)
+    num_edges = len(cfg.edges)
+
+    num_back_edges = sum(1 for e in cfg.edges if e.kind == CFGEdgeKind.BACK_EDGE)
+    num_branches = sum(
+        1 for e in cfg.edges
+        if e.kind in (CFGEdgeKind.TRUE_BRANCH, CFGEdgeKind.FALSE_BRANCH)
+    )
+    num_returns = sum(1 for e in cfg.edges if e.kind == CFGEdgeKind.RETURN)
+
+    branch_ratio = num_branches / num_edges if num_edges > 0 else 0.0
+
+    # McCabe cyclomatic complexity: E - N + 2
+    cyclomatic = max(1, num_edges - num_blocks + 2)
+
+    # BFS from entry to find max depth (longest shortest path)
+    max_depth = 0
+    if cfg.entry_block_id in cfg.blocks:
+        visited: dict[int, int] = {cfg.entry_block_id: 0}
+        queue: deque[int] = deque([cfg.entry_block_id])
+        while queue:
+            bid = queue.popleft()
+            depth = visited[bid]
+            max_depth = max(max_depth, depth)
+            for succ in cfg.blocks[bid].successors:
+                if succ not in visited:
+                    visited[succ] = depth + 1
+                    queue.append(succ)
+
+    return CFGFeatures(
+        num_blocks=num_blocks,
+        num_edges=num_edges,
+        num_back_edges=num_back_edges,
+        num_branches=num_branches,
+        num_returns=num_returns,
+        branch_ratio=round(branch_ratio, 4),
+        cyclomatic_complexity=cyclomatic,
+        max_block_depth=max_depth,
+    )

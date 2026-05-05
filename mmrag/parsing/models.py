@@ -107,6 +107,18 @@ class ChunkKind(str, Enum):
     SLICE = "slice"
 
 
+class CFGFeatures(BaseModel):
+    """Structural features extracted from a CFG for graph-modality retrieval."""
+    num_blocks: int = 0
+    num_edges: int = 0
+    num_back_edges: int = 0       # loop count proxy
+    num_branches: int = 0         # true/false branch edges
+    num_returns: int = 0
+    branch_ratio: float = 0.0     # branches / edges
+    cyclomatic_complexity: int = 1  # edges - nodes + 2
+    max_block_depth: int = 0      # longest path from entry (BFS depth)
+
+
 class Chunk(BaseModel):
     chunk_id: str
     kind: ChunkKind
@@ -116,6 +128,7 @@ class Chunk(BaseModel):
     text: str
     line_count: int
     ast_node_types: list[str]
+    cfg_features: CFGFeatures | None = None
     metadata: dict[str, str] = Field(default_factory=dict)
 
 

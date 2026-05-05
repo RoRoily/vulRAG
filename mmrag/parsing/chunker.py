@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from .cfg_builder import extract_cfg_features
 from .models import (
-    ASTNode, Chunk, ChunkKind, FunctionInfo, SourceRange, SourceLocation,
+    ASTNode, CFG, CFGFeatures, Chunk, ChunkKind, FunctionInfo, SourceRange, SourceLocation,
 )
 
 _COMPOUND_TYPES = frozenset({
@@ -38,13 +39,19 @@ def _make_chunk_id(file_path: str, func_name: str | None, start_line: int, end_l
     return f"{file_path}:{fn}:{start_line}-{end_line}"
 
 
-def _make_function_chunk(func: FunctionInfo, source: bytes, file_path: str) -> Chunk:
+def _make_function_chunk(
+    func: FunctionInfo,
+    source: bytes,
+    file_path: str,
+    cfg: CFG | None = None,
+) -> Chunk:
     sr = func.source_range
     text = _text_from_source(source, sr)
     node_types = _collect_node_types(func.ast)
     metadata: dict[str, str] = {}
     if _has_error_nodes(func.ast):
         metadata["has_errors"] = "true"
+    cfg_features: CFGFeatures | None = extract_cfg_features(cfg) if cfg is not None else None
     return Chunk(
         chunk_id=_make_chunk_id(file_path, func.name, sr.start.line, sr.end.line),
         kind=ChunkKind.FUNCTION,
@@ -54,6 +61,7 @@ def _make_function_chunk(func: FunctionInfo, source: bytes, file_path: str) -> C
         text=text,
         line_count=sr.end.line - sr.start.line + 1,
         ast_node_types=node_types,
+        cfg_features=cfg_features,
         metadata=metadata,
     )
 
@@ -117,9 +125,10 @@ def _chunk_function(
     file_path: str,
     split_threshold: int,
     max_simple_group: int,
+    cfg: CFG | None = None,
 ) -> list[Chunk]:
     chunks: list[Chunk] = []
-    chunks.append(_make_function_chunk(func, source, file_path))
+    chunks.append(_make_function_chunk(func, source, file_path, cfg=cfg))
 
     func_lines = func.source_range.end.line - func.source_range.start.line + 1
     if func_lines <= split_threshold:
@@ -161,10 +170,12 @@ def chunk_file(
     file_path: str,
     split_threshold: int = 30,
     max_simple_group: int = 15,
+    cfgs: dict[str, CFG] | None = None,
 ) -> list[Chunk]:
     chunks: list[Chunk] = []
     for func in functions:
+        cfg = cfgs.get(func.name) if cfgs else None
         chunks.extend(
-            _chunk_function(func, source, file_path, split_threshold, max_simple_group)
+            _chunk_function(func, source, file_path, split_threshold, max_simple_group, cfg=cfg)
         )
     return chunks

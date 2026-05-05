@@ -28,7 +28,13 @@
       "Bash(python -m mmrag.benchmark evaluate --dataset tests/fixtures/benchmark_sample.jsonl --mode retrieval --output text)",
       "Bash(python -m mmrag.finetune generate-triplets --dataset tests/fixtures/benchmark_sample.jsonl --output /tmp/triplets_test.jsonl)",
       "Bash(python -m mmrag.finetune --help)",
-      "Bash(python -m mmrag.benchmark --help)"
+      "Bash(python -m mmrag.benchmark --help)",
+      "Bash(python -m py_compile mmrag/parsing/models.py mmrag/parsing/cfg_builder.py mmrag/parsing/chunker.py mmrag/parsing/__main__.py mmrag/retrieval/models.py mmrag/retrieval/fusion.py mmrag/retrieval/graph_index.py mmrag/retrieval/retriever.py)",
+      "Bash(python -c \"import pdfplumber; print\\('ok'\\)\")",
+      "Bash(python -c \"import fitz; print\\('ok'\\)\")",
+      "Bash(python -c \"import docx2txt; print\\('ok'\\)\")",
+      "Bash(pip list *)",
+      "Bash(del \"E:\\\\Projects\\\\vulRAG\\\\_tmp_pdf.txt\" \"E:\\\\Projects\\\\vulRAG\\\\_tmp_docx.txt\")"
     ]
   }
 }

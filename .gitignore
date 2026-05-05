@@ -16,3 +16,6 @@
 *.bin
 *.safetensors
 qwen2.5-*
+*.md 
+*.pdf 
+*.docx

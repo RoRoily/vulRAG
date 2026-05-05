@@ -86,7 +86,7 @@ def main(argv: list[str] | None = None) -> None:
         cfg = build_cfg(func)
         cfgs[func.name] = cfg
 
-    chunks = chunk_file(functions, source, args.file)
+    chunks = chunk_file(functions, source, args.file, cfgs=cfgs)
 
     result = ParseResult(
         file_path=args.file,

@@ -11,6 +11,8 @@ def reciprocal_rank_fusion(
     rrf_k: int = 60,
     bm25_weight: float = 1.0,
     embedding_weight: float = 1.0,
+    graph_results: list[RetrievalResult] | None = None,
+    graph_weight: float = 0.5,
 ) -> list[RetrievalResult]:
     scores: dict[str, float] = {}
     chunks: dict[str, Chunk] = {}
@@ -22,6 +24,11 @@ def reciprocal_rank_fusion(
     for r in embedding_results:
         scores[r.chunk_id] = scores.get(r.chunk_id, 0.0) + embedding_weight / (rrf_k + r.rank)
         chunks[r.chunk_id] = r.chunk
+
+    if graph_results:
+        for r in graph_results:
+            scores[r.chunk_id] = scores.get(r.chunk_id, 0.0) + graph_weight / (rrf_k + r.rank)
+            chunks[r.chunk_id] = r.chunk
 
     sorted_ids = sorted(scores.keys(), key=lambda cid: scores[cid], reverse=True)
 

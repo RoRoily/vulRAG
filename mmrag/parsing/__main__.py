@@ -7,6 +7,7 @@ import sys
 from .ast_parser import collect_errors, parse_file
 from .cfg_builder import build_cfg
 from .chunker import chunk_file
+from .macro_expander import expand_source
 from .models import ParseResult, SliceCriterion, SliceDirection
 from .slicer import compute_slice
 
@@ -81,12 +82,14 @@ def main(argv: list[str] | None = None) -> None:
     root, functions, source = parse_file(args.file, args.language)
     errors = collect_errors(root)
 
+    _, expansion_map = expand_source(source, root)
+
     cfgs = {}
     for func in functions:
         cfg = build_cfg(func)
         cfgs[func.name] = cfg
 
-    chunks = chunk_file(functions, source, args.file, cfgs=cfgs)
+    chunks = chunk_file(functions, source, args.file, cfgs=cfgs, expansion_map=expansion_map)
 
     result = ParseResult(
         file_path=args.file,
@@ -95,6 +98,7 @@ def main(argv: list[str] | None = None) -> None:
         cfgs=cfgs,
         chunks=chunks,
         errors=errors,
+        macro_expansion_map=expansion_map,
     )
 
     slices = []

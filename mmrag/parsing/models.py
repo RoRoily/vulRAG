@@ -126,10 +126,24 @@ class Chunk(BaseModel):
     function_name: str | None = None
     source_range: SourceRange
     text: str
+    expanded_text: str | None = None  # macro-expanded version for LLM context
     line_count: int
     ast_node_types: list[str]
     cfg_features: CFGFeatures | None = None
     metadata: dict[str, str] = Field(default_factory=dict)
+
+
+class MacroExpansionMap(BaseModel):
+    """Bidirectional mapping between expanded virtual lines and original physical lines."""
+    expanded_to_original: dict[int, int] = Field(default_factory=dict)
+    original_to_expanded: dict[int, list[int]] = Field(default_factory=dict)
+    expanded_lines: list[str] = Field(default_factory=list)
+
+    def translate_to_original(self, expanded_line: int) -> int:
+        return self.expanded_to_original.get(expanded_line, expanded_line)
+
+    def translate_to_expanded(self, original_line: int) -> list[int]:
+        return self.original_to_expanded.get(original_line, [original_line])
 
 
 class ParseResult(BaseModel):
@@ -139,3 +153,4 @@ class ParseResult(BaseModel):
     cfgs: dict[str, CFG]
     chunks: list[Chunk]
     errors: list[str] = Field(default_factory=list)
+    macro_expansion_map: MacroExpansionMap | None = None

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from .cfg_builder import extract_cfg_features
 from .models import (
-    ASTNode, CFG, CFGFeatures, Chunk, ChunkKind, FunctionInfo, SourceRange, SourceLocation,
+    ASTNode, CFG, CFGFeatures, Chunk, ChunkKind, FunctionInfo, MacroExpansionMap,
+    SourceRange, SourceLocation,
 )
 
 _COMPOUND_TYPES = frozenset({
@@ -44,6 +45,7 @@ def _make_function_chunk(
     source: bytes,
     file_path: str,
     cfg: CFG | None = None,
+    expansion_map: MacroExpansionMap | None = None,
 ) -> Chunk:
     sr = func.source_range
     text = _text_from_source(source, sr)
@@ -52,6 +54,21 @@ def _make_function_chunk(
     if _has_error_nodes(func.ast):
         metadata["has_errors"] = "true"
     cfg_features: CFGFeatures | None = extract_cfg_features(cfg) if cfg is not None else None
+
+    expanded_text: str | None = None
+    if expansion_map and expansion_map.expanded_lines:
+        # Collect expanded lines that correspond to this function's physical line range
+        start = sr.start.line
+        end = sr.end.line
+        parts: list[str] = []
+        for orig_line in range(start, end + 1):
+            for exp_line in expansion_map.translate_to_expanded(orig_line):
+                idx = exp_line - 1
+                if 0 <= idx < len(expansion_map.expanded_lines):
+                    parts.append(expansion_map.expanded_lines[idx])
+        if parts:
+            expanded_text = "\n".join(parts)
+
     return Chunk(
         chunk_id=_make_chunk_id(file_path, func.name, sr.start.line, sr.end.line),
         kind=ChunkKind.FUNCTION,
@@ -59,6 +76,7 @@ def _make_function_chunk(
         function_name=func.name,
         source_range=sr,
         text=text,
+        expanded_text=expanded_text,
         line_count=sr.end.line - sr.start.line + 1,
         ast_node_types=node_types,
         cfg_features=cfg_features,
@@ -126,9 +144,10 @@ def _chunk_function(
     split_threshold: int,
     max_simple_group: int,
     cfg: CFG | None = None,
+    expansion_map: MacroExpansionMap | None = None,
 ) -> list[Chunk]:
     chunks: list[Chunk] = []
-    chunks.append(_make_function_chunk(func, source, file_path, cfg=cfg))
+    chunks.append(_make_function_chunk(func, source, file_path, cfg=cfg, expansion_map=expansion_map))
 
     func_lines = func.source_range.end.line - func.source_range.start.line + 1
     if func_lines <= split_threshold:
@@ -171,11 +190,12 @@ def chunk_file(
     split_threshold: int = 30,
     max_simple_group: int = 15,
     cfgs: dict[str, CFG] | None = None,
+    expansion_map: MacroExpansionMap | None = None,
 ) -> list[Chunk]:
     chunks: list[Chunk] = []
     for func in functions:
         cfg = cfgs.get(func.name) if cfgs else None
         chunks.extend(
-            _chunk_function(func, source, file_path, split_threshold, max_simple_group, cfg=cfg)
+            _chunk_function(func, source, file_path, split_threshold, max_simple_group, cfg=cfg, expansion_map=expansion_map)
         )
     return chunks

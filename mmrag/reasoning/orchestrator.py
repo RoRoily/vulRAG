@@ -7,7 +7,8 @@ import time
 from mmrag.parsing.ast_parser import collect_errors, parse_file
 from mmrag.parsing.cfg_builder import build_cfg
 from mmrag.parsing.chunker import chunk_file
-from mmrag.parsing.models import CFG, FunctionInfo, ParseResult, SliceCriterion, SliceDirection
+from mmrag.parsing.macro_expander import expand_source
+from mmrag.parsing.models import CFG, FunctionInfo, MacroExpansionMap, ParseResult, SliceCriterion, SliceDirection
 from mmrag.parsing.slicer import compute_slice
 from mmrag.retrieval.models import RetrievalConfig
 from mmrag.retrieval.retriever import Retriever
@@ -51,13 +52,24 @@ class VulnerabilityAnalyzer:
         cfg: CFG,
         source: bytes,
         parse_result: ParseResult | None = None,
+        expansion_map: MacroExpansionMap | None = None,
     ) -> VulnerabilityReport:
         t0 = time.time()
         source_text = source.decode("utf-8", errors="replace")
         source_lines = source_text.splitlines()
 
-        # Extract function code
+        # Use macro-expanded text for LLM if available, fall back to raw
         func_code = func.ast.text
+        if expansion_map and expansion_map.expanded_lines:
+            sr = func.source_range
+            parts: list[str] = []
+            for orig_line in range(sr.start.line, sr.end.line + 1):
+                for exp_line in expansion_map.translate_to_expanded(orig_line):
+                    idx = exp_line - 1
+                    if 0 <= idx < len(expansion_map.expanded_lines):
+                        parts.append(expansion_map.expanded_lines[idx])
+            if parts:
+                func_code = "\n".join(parts)
 
         # Build CFG summary
         cfg_summary = build_cfg_summary(cfg)
@@ -118,7 +130,15 @@ class VulnerabilityAnalyzer:
         judge_verdict = self._judge.judge(func_code, debate_text)
         debate_record.judge_verdict = judge_verdict
 
-        # Validate evidence chain
+        # Validate evidence chain — translate expanded lines back to physical lines first
+        if expansion_map:
+            from .models import SourceSinkPoint as _SSP
+            translated: list[_SSP] = []
+            for pt in judge_verdict.source_sink_path:
+                phys = expansion_map.translate_to_original(pt.line)
+                translated.append(pt.model_copy(update={"line": phys}))
+            judge_verdict = judge_verdict.model_copy(update={"source_sink_path": translated})
+
         validated_path = validate_source_sink_path(
             judge_verdict.source_sink_path,
             source_lines,
@@ -147,11 +167,13 @@ class VulnerabilityAnalyzer:
         if errors:
             logger.warning("Parse errors in %s: %d", file_path, len(errors))
 
+        _, expansion_map = expand_source(source, root)
+
         cfgs: dict[str, CFG] = {}
         for func in functions:
             cfgs[func.name] = build_cfg(func)
 
-        chunks = chunk_file(functions, source, file_path)
+        chunks = chunk_file(functions, source, file_path, cfgs=cfgs, expansion_map=expansion_map)
 
         parse_result = ParseResult(
             file_path=file_path,
@@ -160,6 +182,7 @@ class VulnerabilityAnalyzer:
             cfgs=cfgs,
             chunks=chunks,
             errors=errors,
+            macro_expansion_map=expansion_map,
         )
 
         reports: list[VulnerabilityReport] = []
@@ -169,7 +192,7 @@ class VulnerabilityAnalyzer:
             if not dangerous:
                 logger.info("Skipping %s — no dangerous API calls", func.name)
                 continue
-            report = self.analyze_function(func, cfg, source, parse_result)
+            report = self.analyze_function(func, cfg, source, parse_result, expansion_map=expansion_map)
             reports.append(report)
 
         return reports

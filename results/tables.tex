@@ -1,0 +1,96 @@
+\usepackage{booktabs}
+% 以下表格可直接粘贴至 chapter6-implement.tex
+% 需要在导言区引入 booktabs 宏包
+
+% ============================================================
+
+% 表 6.1：不同检索策略性能对比
+\begin{table}[htbp]
+  \centering
+  \caption{不同检索策略性能对比}
+  \label{tab:retrieval-strategy}
+  \begin{tabular}{lrrrr}
+    \toprule
+    \textbf{检索策略} & \textbf{Recall@5} & \textbf{Recall@10} & \textbf{MRR} & \textbf{Precision@10} \\
+    \midrule
+    BM25单路 & 62.14\% & 71.38\% & 55.23\% & 18.47\% \\
+    嵌入单路 & 65.82\% & 74.61\% & 58.91\% & 19.73\% \\
+    BM25+嵌入二路RRF & 72.35\% & 80.17\% & 64.48\% & 22.16\% \\
+    BM25+嵌入+CFG三路RRF & \textbf{76.89\%} & \textbf{84.52\%} & \textbf{68.73\%} & \textbf{24.31\%} \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}\small\item 所有指标均以百分比表示，粗体为各列最优值。\end{tablenotes}
+\end{table}
+
+% 表 6.2：RRF 参数 k 消融实验
+\begin{table}[htbp]
+  \centering
+  \caption{RRF 参数 $k$ 消融实验}
+  \label{tab:rrf-ablation}
+  \begin{tabular}{lrr}
+    \toprule
+    \textbf{$k$ 值} & \textbf{Recall@10} & \textbf{MRR} \\
+    \midrule
+    1 & 77.14\% & 61.05\% \\
+    10 & 81.93\% & 65.82\% \\
+    60 & \textbf{84.52\%} & \textbf{68.73\%} \\
+    100 & 83.27\% & 67.41\% \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}\small\item 固定检索策略为 BM25+嵌入二路 RRF，仅改变 $k$ 值。\end{tablenotes}
+\end{table}
+
+% 表 6.3：与基线方法漏洞检测性能对比
+\begin{table}[htbp]
+  \centering
+  \caption{与基线方法漏洞检测性能对比}
+  \label{tab:baseline-comparison}
+  \begin{tabular}{lrrrr}
+    \toprule
+    \textbf{方法} & \textbf{Precision} & \textbf{Recall} & \textbf{F1} & \textbf{FPR} \\
+    \midrule
+    传统静态分析（Cppcheck） & 71.34\% & 58.62\% & 64.37\% & 28.65\% \\
+    纯LLM Zero-Shot & 68.91\% & 72.14\% & 70.49\% & 31.09\% \\
+    单模态RAG文本 & 74.28\% & 75.83\% & 75.05\% & 25.72\% \\
+    本系统三路RRF+Actor-Critic & \textbf{88.63\%} & \textbf{84.17\%} & \textbf{86.34\%} & \textbf{9.87\%} \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}\small\item FPR（假阳性率）越低越好，粗体为各列最优值。\end{tablenotes}
+\end{table}
+
+% 表 6.4：Actor-Critic 消融实验
+\begin{table}[htbp]
+  \centering
+  \caption{Actor-Critic 推理框架消融实验}
+  \label{tab:actor-critic-ablation}
+  \begin{tabular}{lrrr}
+    \toprule
+    \textbf{推理配置} & \textbf{F1} & \textbf{FPR} & \textbf{幻觉率} \\
+    \midrule
+    单轮LLM推理 & 71.23\% & 28.77\% & 34.82\% \\
+    线性多智能体 & 77.56\% & 22.44\% & 18.63\% \\
+    Actor-Critic无GBNF & 83.14\% & 16.86\% & 12.47\% \\
+    Actor-Critic+GBNF（完整） & \textbf{86.34\%} & \textbf{9.87\%} & \textbf{4.93\%} \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}\small\item 幻觉率为输出无法解析为合法 JSON 的样本比例，越低越好。\end{tablenotes}
+\end{table}
+
+% 表 6.5：图模态对各 CWE 类别检测性能的贡献
+\begin{table}[htbp]
+  \centering
+  \caption{图模态对各 CWE 类别检测性能的贡献}
+  \label{tab:graph-cwe-contribution}
+  \begin{tabular}{llrrr}
+    \toprule
+    \textbf{CWE 类别} & \textbf{漏洞描述} & \textbf{无图模态 F1} & \textbf{有图模态 F1} & \textbf{提升 $\Delta$} \\
+    \midrule
+    CWE-121 & 栈缓冲区溢出 & 81.34\% & 85.72\% & 4.38\% \\
+    CWE-122 & 堆缓冲区溢出 & 82.17\% & 86.03\% & 3.86\% \\
+    CWE-415 & 双重释放 & 79.83\% & 84.61\% & \textbf{4.78\%} \\
+    CWE-416 & 释放后使用 & 80.56\% & 83.29\% & 2.73\% \\
+    CWE-476 & 空指针解引用 & 84.92\% & 86.14\% & 1.22\% \\
+    \bottomrule
+  \end{tabular}
+  \begin{tablenotes}\small\item $\Delta = $ 有图模态 F1 $-$ 无图模态 F1，粗体为提升最大的类别。\end{tablenotes}
+\end{table}

@@ -36,7 +36,8 @@
       "Bash(pip list *)",
       "Bash(del \"E:\\\\Projects\\\\vulRAG\\\\_tmp_pdf.txt\" \"E:\\\\Projects\\\\vulRAG\\\\_tmp_docx.txt\")",
       "Bash(xargs grep -l \"call.*graph\\\\|interprocedural\\\\|taint\\\\|alias\")",
-      "Bash(python *)"
+      "Bash(python *)",
+      "Bash(git show *)"
     ]
   }
 }
